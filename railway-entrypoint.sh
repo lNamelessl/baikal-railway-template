@@ -19,6 +19,9 @@ set -eu
 PRISTINE=/opt/baikal-pristine
 TARGET=/var/www/baikal
 
+echo "railway-entrypoint: start, args: $*"
+ls -l /docker-entrypoint.sh || echo "railway-entrypoint: WARNING /docker-entrypoint.sh missing"
+
 if [ ! -d "$TARGET/html" ]; then
   echo "railway-entrypoint: seeding $TARGET from pristine image copy"
   cp -a "$PRISTINE/." "$TARGET/"
@@ -34,4 +37,5 @@ else
   done
 fi
 
+echo "railway-entrypoint: handing off to /docker-entrypoint.sh $*"
 exec /docker-entrypoint.sh "$@"

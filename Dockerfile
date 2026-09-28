@@ -32,6 +32,8 @@ RUN cp -a /var/www/baikal /opt/baikal-pristine
 COPY railway-entrypoint.sh /usr/local/bin/railway-entrypoint.sh
 RUN chmod 755 /usr/local/bin/railway-entrypoint.sh
 
-# CMD is inherited from the nginx base image ("nginx -g 'daemon off;'");
-# the wrapper execs the stock /docker-entrypoint.sh, so nothing else changes.
+# CMD is the nginx base image default, spelled out explicitly so the build
+# pipeline can never drop it when the ENTRYPOINT is overridden; the wrapper
+# execs the stock /docker-entrypoint.sh, so nothing else changes.
 ENTRYPOINT ["/usr/local/bin/railway-entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]
