@@ -13,11 +13,25 @@
 #   - nginx variant listens on port 80 only (no TLS inside; Railway's edge
 #     terminates HTTPS for your domain)
 #   - all persistent data lives in /var/www/baikal/Specific (SQLite database
-#     + wizard-written config) and /var/www/baikal/config — both are mounted
-#     as Railway volumes by this template
+#     + wizard-written config) and /var/www/baikal/config — Railway attaches
+#     ONE volume per service, so this template mounts a single volume over
+#     /var/www/baikal and seeds it on first boot (see railway-entrypoint.sh:
+#     first boot copies the app tree onto the volume; later boots refresh the
+#     app code while preserving Specific/ and config/)
 #   - on every boot the entrypoint script 40-fix-baikal-file-permissions.sh
 #     runs as root and chowns /var/www/baikal to nginx:nginx (the opt-out
 #     env BAIKAL_SKIP_CHOWN is intentionally NOT set)
 #   - first boot serves the "Baïkal initialization wizard" at / : set an
 #     admin password, keep the SQLite default, done — no other configuration
 FROM ckulka/baikal:0.10.1-nginx
+
+# Stash the image's Baikal tree so the single Railway volume (mounted over
+# /var/www/baikal) can be seeded on first boot and code-refreshed later.
+RUN cp -a /var/www/baikal /opt/baikal-pristine
+
+COPY railway-entrypoint.sh /usr/local/bin/railway-entrypoint.sh
+RUN chmod 755 /usr/local/bin/railway-entrypoint.sh
+
+# CMD is inherited from the nginx base image ("nginx -g 'daemon off;'");
+# the wrapper execs the stock /docker-entrypoint.sh, so nothing else changes.
+ENTRYPOINT ["/usr/local/bin/railway-entrypoint.sh"]

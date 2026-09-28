@@ -11,7 +11,7 @@ Pinned to the stable [`ckulka/baikal`](https://github.com/ckulka/baikal-docker) 
 | App | Baïkal 0.10.1 (ckulka image, nginx variant), served on your Railway domain |
 | Credentials | **None shipped** — you create the admin account in the first-boot wizard |
 | Database | SQLite, stored on a Railway volume — no external database service |
-| Persistence | Two Railway volumes: `/var/www/baikal/Specific` (SQLite DB + config) and `/var/www/baikal/config` — survive restarts and redeploys |
+| Persistence | One Railway volume at `/var/www/baikal` (covers both `Specific` and `config`; Railway mounts one volume per service) — data survives restarts and redeploys |
 | Endpoints | CalDAV `https://<domain>/cal.php/` · CardDAV `https://<domain>/card.php/` · combined `https://<domain>/dav.php/` · `/.well-known/caldav` and `/.well-known/carddav` auto-redirect |
 
 # Deploy and Host
@@ -20,9 +20,9 @@ Pinned to the stable [`ckulka/baikal`](https://github.com/ckulka/baikal-docker) 
 
 Deploying this template provisions exactly one Railway service:
 
-- **baikal** — built from the pinned `ckulka/baikal:0.10.1-nginx` image (see the 1-line [Dockerfile](./Dockerfile)). The image's entrypoint fixes file permissions on every boot (`chown nginx:nginx` on the Baïkal directories), so the mounted volumes just work.
+- **baikal** — built from the pinned `ckulka/baikal:0.10.1-nginx` image plus a small boot wrapper ([`railway-entrypoint.sh`](./railway-entrypoint.sh)) that, on every boot: seeds the volume with Baïkal's application files on first boot, refreshes the application code on later boots (so image upgrades take effect) while preserving your data, then hands off to the untouched upstream entrypoint (which fixes file permissions and starts nginx + PHP-FPM).
 
-Two Railway volumes are mounted at `/var/www/baikal/Specific` and `/var/www/baikal/config` — Baïkal keeps its entire state there (SQLite database, admin account, calendars, address books), so your data survives every restart and redeploy.
+One Railway volume is mounted at `/var/www/baikal` — Baïkal keeps its entire state there (SQLite database, admin account, calendars, address books in `Specific/`, plus `config/`), so your data survives every restart and redeploy. Railway attaches a single volume per service; both of the image's persistent directories live under this one mount.
 
 There is **nothing to type at deploy time**: the only template variable, `BAIKAL_SERVERNAME`, is filled automatically from your Railway domain (`${{RAILWAY_PUBLIC_DOMAIN}}`). The admin account is created by you, in the browser, on first visit.
 
@@ -56,7 +56,7 @@ The pinned `ckulka/baikal` image packages **Baïkal 0.10.1**; upstream Baïkal i
 
 ## Troubleshooting
 
-- **Wizard asks to log in immediately / no wizard?** The volumes already hold a config — a previous deploy initialized Baïkal. Delete the volumes (or the project) and redeploy fresh to restart the wizard.
+- **Wizard asks to log in immediately / no wizard?** The volume already holds a config — a previous deploy initialized Baïkal. Delete the volume (or the project) and redeploy fresh to restart the wizard.
 - **CalDAV client can't connect?** Check the URL ends in `.php` and, when entered manually, ends with `/` (`/cal.php/`, not `/cal.php`). Try `https://<domain>/dav.php/` if your client does no well-known discovery. Check the user/password in the Baïkal admin panel.
 - **404 on `/Specific/...`?** Expected — that path is blocked on purpose (it holds the database).
 - **Permission errors in deploy logs mentioning `chown`?** The image fixes permissions on boot as root; if your logs show `Operation not permitted`, redeploy once — and please open an issue on the template repo.
