@@ -1,6 +1,6 @@
 # Baïkal on Railway — CalDAV & CardDAV sync for every device, one click
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.app/new?github_url=https://github.com/lNamelessl/baikal-railway-template)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/baikal-template)
 
 Baïkal is the lightweight CalDAV/CardDAV server based on sabre/dav: your own calendar and contact sync that every phone and desktop client speaks natively. This template ships it **zero-configuration at deploy time** — you deploy, open your Railway domain, and finish a 3-minute wizard (set an admin password, keep the SQLite default, done).
 
